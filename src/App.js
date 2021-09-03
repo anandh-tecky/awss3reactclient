@@ -5,8 +5,8 @@ import axios from "axios";
 import {useDropzone} from 'react-dropzone'
 
 const UserProfiles=()=>{
-
-  const[userProfiles,setUserProfiles]=useState([]);
+  const initalState = [];
+  const[userProfiles,setUserProfiles]=useState(initalState);
   const fetchUserProfiles=()=>{
     axios.get("http://localhost:8080/api/v1/user-profile")
         .then(res=>{
@@ -17,21 +17,31 @@ const UserProfiles=()=>{
   useEffect(()=>{
     fetchUserProfiles();
   },[]);
-  return userProfiles.map((userProfile,index)=>{
+  return userProfiles.map((userProfile, index) => {
     return (
       <div key={index}>
-        {userProfile.userProfileId?<img src={`http://localhost:8080/api/v1/user-profile/${userProfile.userProfileId}/image/download`}/>:null}
-        <br/>
-        <br/>
-        <h1>{userProfile.username}</h1>
-        <p>{userProfile.userProfileId}</p>
-        <Dropzone {...userProfile}/>
+        <UserCard userProfile={userProfile} setUserProfiles={setUserProfiles}/>
       </div>
     )
   })
 }
+const UserCard=({userProfile,setUserProfiles})=>{
+  const userImage=()=>{
+    let img=<div><img alt="UserImage" key={userProfile.userProfileImageLink} src={`http://localhost:8080/api/v1/user-profile/${userProfile.userProfileId}/${userProfile.userProfileImageLink}/download`}/></div>;
+    return img;
+  }
+  return(
+    <article>
+      {userImage()}
+      <h1>{userProfile.username}</h1>
+        <p>{userProfile.userProfileId}</p>
+        <Dropzone userProfile={userProfile} setUserProfiles={setUserProfiles}/>
+    </article>
+  )
+}
 
-function Dropzone({userProfileId,userProfileImageLink}) {
+
+function Dropzone({userProfile,setUserProfiles}) {
   const onDrop = useCallback(acceptedFiles => {
     const file=acceptedFiles[0];
     console.log(file);
@@ -39,13 +49,14 @@ function Dropzone({userProfileId,userProfileImageLink}) {
     const formData=new FormData();
     formData.append("file",file);
 
-    axios.post(`http://localhost:8080/api/v1/user-profile/${userProfileId}/image/upload`,
+    axios.post(`http://localhost:8080/api/v1/user-profile/${userProfile.userProfileId}/image/upload`,
     formData,{
       headers:{
         "Content-Type":"multipart/form-data"
       }
-    }).then(()=>{
+    }).then(res=>{
       console.log("File uploaded successfully");
+      setUserProfiles(res.data);
     }).catch(err=>{
       console.log(err);
     })
